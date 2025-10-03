@@ -1,12 +1,13 @@
-import asyncio
 import json
 import logging
-import os
+from typing import Literal
+
 from cachetools.func import ttl_cache
 from dotenv import load_dotenv
 from fastmcp import FastMCP
+from starlette.middleware import Middleware
 
-from zendesk_client import ZendeskClient
+from .utils.user_token_middleware import UserTokenMiddleware
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,18 +17,52 @@ logging.basicConfig(
 logger = logging.getLogger("zendesk-mcp-server")
 logger.info("Zendesk MCP server started")
 
-# -------------------------------
-# Setup Zendesk client
-# -------------------------------
+
 load_dotenv()
-zendesk_client = ZendeskClient(
-    subdomain=os.getenv("ZENDESK_SUBDOMAIN"),
-    email=os.getenv("ZENDESK_EMAIL"),
-    token=os.getenv("ZENDESK_API_KEY"),
+
+
+class AuthenticatedFastMCP(FastMCP):
+    """FastMCP server with OAuth middleware"""
+    
+    def __init__(self, name: str):
+        super().__init__(name)
+    
+    def http_app(
+        self,
+        path: str | None = None,
+        middleware: list[Middleware] | None = None,
+        transport: Literal["streamable-http", "sse", "http"] = "streamable-http",
+        stateless_http: bool = False,
+    ):
+        """Override to add user token middleware"""
+        
+        # Create user token middleware
+        user_token_mw = Middleware(
+            UserTokenMiddleware
+        )
+
+        # Combine with any additional middleware
+        final_middleware_list = [user_token_mw]
+        if middleware:
+            final_middleware_list.extend(middleware)
+        
+        # Call parent method with combined middleware
+        app = super().http_app(
+            path=path,
+            middleware=final_middleware_list,
+            transport=transport,
+            stateless_http=stateless_http,
+        )
+        return app
+
+# Initialize server with authentication
+server = AuthenticatedFastMCP(
+    "Zendesk Server"
 )
 
-# Initialize FastMCP server
-server = FastMCP("Zendesk Server")
+# Register tools after the server is instantiated
+from .tools.tickets import register_tools
+register_tools(server)
 
 
 # -------------------------------
@@ -68,34 +103,13 @@ def draft_ticket_response(ticket_id: int):
 
 
 # -------------------------------
-# Tools
-# -------------------------------
-@server.tool
-def get_ticket(ticket_id: int) -> str:
-    """Retrieve a Zendesk ticket by its ID"""
-    ticket = zendesk_client.get_ticket(ticket_id)
-    return json.dumps(ticket)
-
-
-@server.tool
-def get_ticket_comments(ticket_id: int) -> str:
-    """Retrieve all comments for a Zendesk ticket by its ID"""
-    comments = zendesk_client.get_ticket_comments(ticket_id)
-    return json.dumps(comments)
-
-
-@server.tool
-def create_ticket_comment(ticket_id: int, comment: str, public: bool = True) -> str:
-    """Create a new comment on an existing Zendesk ticket"""
-    result = zendesk_client.post_comment(ticket_id=ticket_id, comment=comment, public=public)
-    return f"Comment created successfully: {result}"
-
-
-# -------------------------------
 # Resources
 # -------------------------------
+from .utils.auth_context import get_user_zendesk_client  # Add this import at the top or before usage
+
 @ttl_cache(ttl=3600)
 def get_cached_kb():
+    zendesk_client = get_user_zendesk_client()
     return zendesk_client.get_all_articles()
 
 
@@ -116,9 +130,8 @@ def read_knowledge_base() -> str:
 
 
 if __name__ == "__main__":
-    # Run over HTTP instead of stdio
     server.run(
-        # transport="http",   # "stdio" is default, change to "http"
-        # host="0.0.0.0",     # bind all interfaces (good for Docker/K8s)
-        # port=8000           # pick your service port
+        transport="streamable-http",  # Use streamable HTTP transport
+        host="0.0.0.0",
+        port=8000
     )

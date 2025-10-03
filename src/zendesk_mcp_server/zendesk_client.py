@@ -5,14 +5,13 @@ from zenpy.lib.api_objects import Comment
 
 
 class ZendeskClient:
-    def __init__(self, subdomain: str, email: str, token: str):
+    def __init__(self, subdomain: str, oauth_token: str):
         """
         Initialize the Zendesk client using zenpy lib.
         """
         self.client = Zenpy(
             subdomain=subdomain,
-            email=email,
-            token=token
+            oauth_token=oauth_token,
         )
 
     def get_ticket(self, ticket_id: int) -> Dict[str, Any]:
