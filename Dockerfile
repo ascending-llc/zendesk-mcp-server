@@ -7,22 +7,26 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project files
-COPY . /app
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install uv (fast Python package manager)
-RUN pip install uv
+# Copy dependency files first for better caching
+COPY pyproject.toml uv.lock ./
 
-# Install Python dependencies
-RUN uv pip install -r pyproject.toml
+# Sync dependencies using uv
+RUN uv sync --frozen --no-dev
 
-# Set environment variables (can be overridden at runtime)
+# Copy the rest of the application
+COPY . .
+
+# Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Expose port if needed (uncomment if your server listens on a port)
+# Expose port
 EXPOSE 8000
 
-# Default command to run the MCP server
-CMD ["python", "src/zendesk_mcp_server/server.py"]
+# Run the MCP server using uv
+CMD ["uv", "run", "python", "-m", "zendesk_mcp_server.server"]

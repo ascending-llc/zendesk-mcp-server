@@ -67,6 +67,75 @@ class ZendeskClient:
         except Exception as e:
             raise Exception(f"Failed to post comment on ticket {ticket_id}: {str(e)}")
 
+    def get_recent_tickets(self, limit: int = 25) -> List[Dict[str, Any]]:
+        """
+        Get recent tickets, sorted by created_at descending.
+        """
+        try:
+            tickets = list(self.client.tickets(sort_by='created_at', sort_order='desc'))
+            # Limit results
+            tickets = tickets[:limit]
+            
+            return [{
+                'id': ticket.id,
+                'subject': ticket.subject,
+                'status': ticket.status,
+                'priority': ticket.priority,
+                'created_at': str(ticket.created_at),
+                'updated_at': str(ticket.updated_at),
+                'requester_id': ticket.requester_id,
+                'assignee_id': ticket.assignee_id
+            } for ticket in tickets]
+        except Exception as e:
+            raise Exception(f"Failed to get recent tickets: {str(e)}")
+
+    def search_tickets(self, query: str, limit: int = 25) -> List[Dict[str, Any]]:
+        """
+        Search tickets using Zendesk search API.
+        Query can include status, assignee, tags, etc.
+        Example: "status:open assignee:me" or "type:ticket urgent"
+        """
+        try:
+            # Ensure we're searching tickets
+            if 'type:ticket' not in query:
+                query = f"type:ticket {query}"
+            
+            results = self.client.search(query)
+            tickets = list(results)[:limit]
+            
+            return [{
+                'id': ticket.id,
+                'subject': ticket.subject,
+                'status': ticket.status,
+                'priority': ticket.priority,
+                'created_at': str(ticket.created_at),
+                'updated_at': str(ticket.updated_at),
+                'requester_id': ticket.requester_id,
+                'assignee_id': ticket.assignee_id
+            } for ticket in tickets]
+        except Exception as e:
+            raise Exception(f"Failed to search tickets: {str(e)}")
+
+    def get_user(self, user_id: int) -> Dict[str, Any]:
+        """
+        Get user information by user ID.
+        """
+        try:
+            user = self.client.users(id=user_id)
+            return {
+                'id': user.id,
+                'name': user.name,
+                'email': user.email,
+                'role': user.role,
+                'created_at': str(user.created_at),
+                'updated_at': str(user.updated_at),
+                'organization_id': user.organization_id,
+                'phone': user.phone,
+                'time_zone': user.time_zone
+            }
+        except Exception as e:
+            raise Exception(f"Failed to get user {user_id}: {str(e)}")
+
     def get_all_articles(self) -> Dict[str, Any]:
         """
         Fetch help center articles as knowledge base.

@@ -14,20 +14,6 @@ def with_zendesk_client(func: F) -> F:
     signature = inspect.signature(func)
     parameters = list(signature.parameters.values())
 
-    if not parameters:
-        raise TypeError("with_zendesk_client requires the wrapped function to accept a client parameter")
-
-    client_param = parameters[0]
-    if client_param.name != "client":
-        raise TypeError("with_zendesk_client expects the first parameter to be named 'client'")
-
-    allowed_kinds = {
-        inspect.Parameter.POSITIONAL_ONLY,
-        inspect.Parameter.POSITIONAL_OR_KEYWORD,
-    }
-    if client_param.kind not in allowed_kinds:
-        raise TypeError("client parameter must be positional")
-
     stripped_signature = signature.replace(parameters=parameters[1:])
 
     @wraps(func)
