@@ -45,11 +45,23 @@ This server provides a comprehensive integration with Zendesk. It offers:
 
 Analyze a Zendesk ticket and provide a detailed analysis of the ticket.
 
-### draft-ticket-respons
+### draft-ticket-response
 
 Draft a response to a Zendesk ticket.
 
 ## Tools
+
+### get_tickets
+
+Fetch the latest tickets with pagination support
+
+- Input:
+  - `page` (integer, optional): Page number (defaults to 1)
+  - `per_page` (integer, optional): Number of tickets per page, max 100 (defaults to 25)
+  - `sort_by` (string, optional): Field to sort by - created_at, updated_at, priority, or status (defaults to created_at)
+  - `sort_order` (string, optional): Sort order - asc or desc (defaults to desc)
+
+- Output: Returns a list of tickets with essential fields including id, subject, status, priority, description, timestamps, and assignee information, along with pagination metadata
 
 ### get_ticket
 
@@ -73,3 +85,33 @@ Create a new comment on an existing Zendesk ticket
   - `ticket_id` (integer): The ID of the ticket to comment on
   - `comment` (string): The comment text/content to add
   - `public` (boolean, optional): Whether the comment should be public (defaults to true)
+
+### create_ticket
+
+Create a new Zendesk ticket
+
+- Input:
+  - `subject` (string): Ticket subject
+  - `description` (string): Ticket description
+  - `requester_id` (integer, optional)
+  - `assignee_id` (integer, optional)
+  - `priority` (string, optional): one of `low`, `normal`, `high`, `urgent`
+  - `type` (string, optional): one of `problem`, `incident`, `question`, `task`
+  - `tags` (array[string], optional)
+  - `custom_fields` (array[object], optional)
+
+### update_ticket
+
+Update fields on an existing Zendesk ticket (e.g., status, priority, assignee)
+
+- Input:
+  - `ticket_id` (integer): The ID of the ticket to update
+  - `subject` (string, optional)
+  - `status` (string, optional): one of `new`, `open`, `pending`, `on-hold`, `solved`, `closed`
+  - `priority` (string, optional): one of `low`, `normal`, `high`, `urgent`
+  - `type` (string, optional)
+  - `assignee_id` (integer, optional)
+  - `requester_id` (integer, optional)
+  - `tags` (array[string], optional)
+  - `custom_fields` (array[object], optional)
+  - `due_at` (string, optional): ISO8601 datetime

@@ -83,14 +83,12 @@ def analyze_ticket(ticket_id: int):
     Remember to be professional and focus on actionable insights.
 """
 
-
 @server.prompt
 def draft_ticket_response(ticket_id: int):
     """Draft a professional response to a Zendesk ticket"""
 
     return f"""
     You are a helpful Zendesk support agent. You need to draft a response to ticket #{ticket_id}.
-
     Please fetch the ticket info, comments and knowledge base to draft a professional and helpful response that:
     1. Acknowledges the customer's concern
     2. Addresses the specific issues raised
