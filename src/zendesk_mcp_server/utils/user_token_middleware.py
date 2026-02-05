@@ -35,7 +35,7 @@ class UserTokenMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.method == "POST" or request.method == "HEAD":
-            auth_header = request.headers.get("authorization")
+            auth_header = request.headers.get("x-jarvis-auth")
             # Log everything from the request
             logger.debug(
                 f"UserTokenMiddleware: Full request - Method: {request.method}, URL: {request.url}"
@@ -58,6 +58,8 @@ class UserTokenMiddleware(BaseHTTPMiddleware):
                             "tools/list",
                             "prompts/list",
                             "resources/list",
+                            "initialize",
+                            "notifications/initialized",
                         ]:
                             logger.debug(
                                 f"UserTokenMiddleware: Allowing MCP protocol method '{method}' without auth"
@@ -80,7 +82,7 @@ class UserTokenMiddleware(BaseHTTPMiddleware):
                 )
                 return JSONResponse(
                     content={
-                        "error": "Unauthorized: Empty Authorization Header",
+                        "error": "Unauthorized: Empty X-Jarvis-Auth Header",
                         "code": 401,
                     },
                     status_code=401,
@@ -114,7 +116,7 @@ class UserTokenMiddleware(BaseHTTPMiddleware):
                     )
             elif auth_header:
                 logger.warning(
-                    f"Unsupported Authorization type for {request_path}: {auth_header.split(' ', 1)[0] if ' ' in auth_header else 'UnknownType'}"
+                    f"Unsupported Auth type for {request_path}: {auth_header.split(' ', 1)[0] if ' ' in auth_header else 'UnknownType'}"
                 )
                 return JSONResponse(
                     {
