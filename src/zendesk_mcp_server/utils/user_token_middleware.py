@@ -35,7 +35,7 @@ class UserTokenMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.method == "POST" or request.method == "HEAD":
-            auth_header = request.headers.get("x-jarvis-auth")
+            auth_header = request.headers.get("authorization")
             # Log everything from the request
             logger.debug(
                 f"UserTokenMiddleware: Full request - Method: {request.method}, URL: {request.url}"
@@ -82,7 +82,7 @@ class UserTokenMiddleware(BaseHTTPMiddleware):
                 )
                 return JSONResponse(
                     content={
-                        "error": "Unauthorized: Empty X-Jarvis-Auth Header",
+                        "error": "Unauthorized: Empty Authorization Header",
                         "code": 401,
                     },
                     status_code=401,
