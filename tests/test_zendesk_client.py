@@ -104,3 +104,12 @@ def test_recent_tickets_pages_via_search(client):
         out = client.get_recent_tickets(per_page=25)
     assert get.call_args.kwargs["params"]["query"] == "type:ticket"
     assert out["has_more"] is False
+
+
+def test_export_page_size_defaults_to_500_and_is_clamped(client):
+    with patch("zendesk_mcp_server.zendesk_client.requests.get",
+               return_value=_resp({"results": [], "meta": {"has_more": False}})) as get:
+        client.search_tickets_export("x")
+        assert get.call_args.kwargs["params"]["page[size]"] == 500
+        client.search_tickets_export("x", page_size=5000)
+        assert get.call_args.kwargs["params"]["page[size]"] == 500

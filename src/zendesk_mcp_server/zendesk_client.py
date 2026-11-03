@@ -9,6 +9,7 @@ from zenpy.lib.api_objects import Comment
 logger = logging.getLogger(__name__)
 
 MAX_PAGE_SIZE = 100
+MAX_EXPORT_PAGE_SIZE = 500
 SEARCH_RESULT_CAP = 1000
 MAX_RATE_LIMIT_RETRIES = 3
 
@@ -155,12 +156,12 @@ class ZendeskClient:
             raise Exception(f"Failed to search tickets: {str(e)}")
 
     def search_tickets_export(
-        self, query: str, cursor: Optional[str] = None, page_size: int = MAX_PAGE_SIZE
+        self, query: str, cursor: Optional[str] = None, page_size: int = MAX_EXPORT_PAGE_SIZE
     ) -> Dict[str, Any]:
         """
         Cursor-paginated ticket search with no 1000-result cap.
         """
-        page_size = max(1, min(page_size, MAX_PAGE_SIZE))
+        page_size = max(1, min(page_size, MAX_EXPORT_PAGE_SIZE))
         params: Dict[str, Any] = {
             "query": query.strip(),
             "filter[type]": "ticket",
