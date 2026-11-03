@@ -51,17 +51,34 @@ Draft a response to a Zendesk ticket.
 
 ## Tools
 
-### get_tickets
+### get_recent_tickets
 
-Fetch the latest tickets with pagination support
+Newest tickets first, one page at a time.
 
-- Input:
-  - `page` (integer, optional): Page number (defaults to 1)
-  - `per_page` (integer, optional): Number of tickets per page, max 100 (defaults to 25)
-  - `sort_by` (string, optional): Field to sort by - created_at, updated_at, priority, or status (defaults to created_at)
-  - `sort_order` (string, optional): Sort order - asc or desc (defaults to desc)
+- Input: `page` (integer, default 1), `per_page` (integer, max 100, default 100)
+- Output: `tickets`, `count`, `page`, `per_page`, `has_more`, `next_page`
 
-- Output: Returns a list of tickets with essential fields including id, subject, status, priority, description, timestamps, and assignee information, along with pagination metadata
+### search_tickets
+
+Search with Zendesk query syntax, one page at a time (newest first). Zendesk only pages through the first 1000 matches; when `count` exceeds that, the response carries a `warning`.
+
+- Input: `query` (string), `page` (integer, default 1), `per_page` (integer, max 100, default 100)
+- Output: `tickets`, `count`, `page`, `per_page`, `has_more`, `next_page`, optional `warning`
+- Date ranges: `created>=2026-10-26 created<2026-11-02`
+
+### search_tickets_export
+
+Cursor-paginated search with no 1000-result cap, for large result sets.
+
+- Input: `query` (string), `cursor` (string, optional), `page_size` (integer, max 100, default 100)
+- Output: `tickets`, `has_more`, `after_cursor`. Call again with `cursor=after_cursor` until `has_more` is false.
+
+### count_tickets
+
+Count tickets matching a query without fetching them (Zendesk refreshes counts periodically, see `refreshed_at`).
+
+- Input: `query` (string)
+- Output: `count`, `refreshed_at`
 
 ### get_ticket
 
